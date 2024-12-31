@@ -75,7 +75,7 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
 
     private void drawCar(Graphics g) {
         g.setColor(Color.red);
-        g.fillRect(carX, carY, carWidth, carHeight);
+        g.fillOval(carX, carY, carWidth, carHeight);
     }
 
     private void drawObstacles(Graphics g) {
@@ -92,9 +92,9 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
         g.drawString("Lives: " + remainingLives, 500, 30);
 
         if (hasFinished) {
-            g.setColor(Color.green);
+            g.setColor(Color.black);
             g.setFont(new Font("Arial", Font.BOLD, 40));
-            g.drawString("You Win!", 220, 150);
+            g.drawString("You Win!", 215, 150);
 
             if (showWinDialog) {
                 showWinDialog = false;
@@ -105,7 +105,7 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
         if (isGameOver) {
             g.setColor(Color.red);
             g.setFont(new Font("Arial", Font.BOLD, 40));
-            g.drawString("Game Over!", 200, 150);
+            g.drawString("Game Over!", 180, 150);
         }
     }
 
@@ -223,6 +223,8 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
         score = 0;
         obstacles.clear();
         spawnObstacles();
+        moveLeft = false;
+        moveRight = false;
     }
 
     private void resetGame() {
@@ -236,6 +238,9 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
         hasFinished = false;
         isGameOver = false;
         showWinDialog = false;
+        moveLeft = false;
+        moveRight = false;
+
     }
 
     @Override
@@ -268,6 +273,7 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
             JFrame frame = new JFrame("Racing Game");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.add(new RacingGame());
+            frame.setResizable(false);
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
