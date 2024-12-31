@@ -14,6 +14,12 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
     private static final int FINISH_LINE_SCORE = 1000;
     private static final int INITIAL_LIVES = 3;
 
+    private static final Color ROAD_COLOR = new Color(50, 50, 50);
+    private static final Color GRASS_COLOR = new Color(34, 139, 34);
+    private static final Color CAR_COLOR = new Color(255, 69, 0);
+    private static final Color OBSTACLE_COLOR = new Color(70, 130, 180);
+    private static final Color ROAD_LINE_COLOR = new Color(255, 215, 0);
+
     private final Timer timer;
     private final Random random = new Random();
 
@@ -38,64 +44,96 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
         setPreferredSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT));
         setBackground(Color.darkGray);
         setFocusable(true);
-        addKeyListener(this);
+        initializeKeyListener();
 
         timer = new Timer(1000 / 60, this);
         timer.start();
 
         spawnObstacles();
+        initializeKeyListener();
+    }
+
+    private void initializeKeyListener() {
+        addKeyListener(this);
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         drawRoad(g);
-        drawCar(g);
-        drawObstacles(g);
-        drawUI(g);
+        drawCar((Graphics2D) g);
+        drawObstacles((Graphics2D) g);
+        drawUI((Graphics2D) g);
     }
 
     private void drawRoad(Graphics g) {
-        // Draw road
-        g.setColor(Color.white);
+        g.setColor(GRASS_COLOR);
+        g.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+        // رسم الطريق
+        g.setColor(ROAD_COLOR);
         g.fillRect(ROAD_LEFT_BOUNDARY, 0, ROAD_WIDTH, WINDOW_HEIGHT);
 
-        // Draw road lines
-        g.setColor(Color.yellow);
-        for (int i = 0; i < WINDOW_HEIGHT; i += 40) {
-            g.fillRect(295, i, 10, 20);
-        }
+        // رسم خطوط الطريق
+        g.setColor(ROAD_LINE_COLOR);
+        float[] dashPattern = {20.0f, 40.0f};
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setStroke(new BasicStroke(10, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dashPattern, 0.0f));
+        g2d.drawLine(295, 0, 295, WINDOW_HEIGHT);
 
-        // Draw finish line when near victory
-        if (score >= FINISH_LINE_SCORE) {
-            g.setColor(Color.white);
-            g.fillRect(ROAD_LEFT_BOUNDARY, 0, 10, WINDOW_HEIGHT);
+        //رسم خط النهاية 
+        if (score >= FINISH_LINE_SCORE - 100) {
+            g.setColor(Color.WHITE);
+            float[] checkeredPattern = {20.0f, 20.0f};
+            g2d.setStroke(new BasicStroke(20, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, checkeredPattern, 0.0f));
+            g.drawLine(ROAD_LEFT_BOUNDARY, 0, ROAD_LEFT_BOUNDARY + ROAD_WIDTH, 0);
         }
     }
 
-    private void drawCar(Graphics g) {
-        g.setColor(Color.red);
-        g.fillOval(carX, carY, carWidth, carHeight);
+    private void drawCar(Graphics2D g) {
+        // رسم جسم السيارة
+        g.setColor(CAR_COLOR);
+        g.fillRoundRect(carX, carY, carWidth, carHeight, 10, 10);
+
+        // رسم النوافذ
+        g.setColor(Color.CYAN);
+        g.fillRoundRect(carX + 5, carY + 10, carWidth - 10, 15, 5, 5);
+
+        // رسم العجلات
+        g.setColor(Color.BLACK);
+        g.fillOval(carX - 5, carY + 5, 10, 20);
+        g.fillOval(carX + carWidth - 5, carY + 5, 10, 20);
+        g.fillOval(carX - 5, carY + carHeight - 25, 10, 20);
+        g.fillOval(carX + carWidth - 5, carY + carHeight - 25, 10, 20);
     }
 
-    private void drawObstacles(Graphics g) {
-        g.setColor(Color.green);
+    private void drawObstacles(Graphics2D g) {
+        g.setColor(OBSTACLE_COLOR);
         for (Rectangle obstacle : obstacles) {
-            g.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            // رسم العوائق بشكل منحني
+            g.fillRoundRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height, 15, 15);
+
+            // إضافة تأثير ظل
+            g.setColor(new Color(0, 0, 0, 50));
+            g.fillRoundRect(obstacle.x + 5, obstacle.y + 5, obstacle.width, obstacle.height, 15, 15);
+            g.setColor(OBSTACLE_COLOR);
         }
     }
 
-    private void drawUI(Graphics g) {
-        g.setColor(Color.white);
+    private void drawUI(Graphics2D g) {
+        // رسم لوحة المعلومات
+        g.setColor(new Color(0, 0, 0, 150));
+        g.fillRoundRect(10, 10, 150, 40, 10, 10);
+        g.fillRoundRect(WINDOW_WIDTH - 160, 10, 150, 40, 10, 10);
+
+        // رسم النص
+        g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 20));
-        g.drawString("Score: " + score, 10, 30);
-        g.drawString("Lives: " + remainingLives, 500, 30);
+        g.drawString("النقاط: " + score, 20, 35);
+        g.drawString("الأرواح: " + remainingLives, WINDOW_WIDTH - 150, 35);
 
         if (hasFinished) {
-            g.setColor(Color.black);
-            g.setFont(new Font("Arial", Font.BOLD, 40));
-            g.drawString("You Win!", 215, 150);
-
+            drawGameMessage(g, "!مبروك الفوز", Color.GREEN);
             if (showWinDialog) {
                 showWinDialog = false;
                 SwingUtilities.invokeLater(this::handleGameWin);
@@ -103,10 +141,19 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
         }
 
         if (isGameOver) {
-            g.setColor(Color.red);
-            g.setFont(new Font("Arial", Font.BOLD, 40));
-            g.drawString("Game Over!", 180, 150);
+            drawGameMessage(g, "!انتهت اللعبة", Color.RED);
         }
+    }
+
+    private void drawGameMessage(Graphics2D g, String message, Color color) {
+        g.setColor(new Color(0, 0, 0, 180));
+        g.fillRoundRect(150, 100, 300, 80, 20, 20);
+
+        g.setColor(color);
+        g.setFont(new Font("Arial", Font.BOLD, 40));
+        FontMetrics fm = g.getFontMetrics();
+        int textWidth = fm.stringWidth(message);
+        g.drawString(message, (WINDOW_WIDTH - textWidth) / 2, 150);
     }
 
     @Override
@@ -240,7 +287,6 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
         showWinDialog = false;
         moveLeft = false;
         moveRight = false;
-
     }
 
     @Override
@@ -265,7 +311,7 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void keyTyped(KeyEvent e) {
-        // Not used
+
     }
 
     public static void main(String[] args) {
@@ -273,8 +319,8 @@ public class RacingGame extends JPanel implements ActionListener, KeyListener {
             JFrame frame = new JFrame("Racing Game");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.add(new RacingGame());
-            frame.setResizable(false);
             frame.pack();
+            frame.setResizable(false);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
